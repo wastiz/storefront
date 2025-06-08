@@ -146,49 +146,54 @@ export default async () => {
             strategy: 'prefix',
             locales: [
                 {
-                    code: 'default',
+                    code: 'en',
                     file: 'en.js',
                     iso: 'en_US',
                     name: 'English',
                     defaultCurrency: 'EUR',
                 },
                 {
-                    code: 'estonian',
+                    code: 'et',
                     file: 'et.js',
                     iso: 'et_EE',
                     name: 'Eesti',
                     defaultCurrency: 'EUR',
                 },
                 {
-                    code: 'russian',
+                    code: 'ru',
                     file: 'ru.js',
                     iso: 'ru_RU',
                     name: 'Русский',
                     defaultCurrency: 'EUR',
                 },
             ],
-            defaultLocale: 'default',
+            defaultLocale: 'en',
+            autoChangeCookie: {
+                currency: true,
+                locale: true,
+                country: true,
+            },
             lazy: true,
             seo: true,
             langDir: 'lang/',
             vueI18n: {
-                fallbackLocale: 'default',
+                fallbackLocale: 'en',
                 numberFormats: {
-                    default: {
+                    en: {
                         currency: {
                             style: 'currency',
                             currency: 'EUR',
                             currencyDisplay: 'symbol',
                         },
                     },
-                    estonian: {
+                    et: {
                         currency: {
                             style: 'currency',
                             currency: 'EUR',
                             currencyDisplay: 'symbol',
                         },
                     },
-                    russian: {
+                    ru: {
                         currency: {
                             style: 'currency',
                             currency: 'EUR',

@@ -119,8 +119,8 @@ export default defineComponent({
     const banners = ref([
       {
         slot: 'banner-A',
-        subtitle: app.i18n.t('Dresses'),
-        title: app.i18n.t('Cocktail & Party'),
+        subtitle: app.i18n.t('Industrial Components and Materials'),
+        title: app.i18n.t('Quality products for your projects'),
         description: app.i18n.t(
           'Find stunning women\'s cocktail dresses and party dresses. Stand out in lace and metallic cocktail dresses from all your favorite brands.',
         ),
@@ -142,8 +142,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-B',
-        subtitle: app.i18n.t('Dresses'),
-        title: app.i18n.t('Linen Dresses'),
+        subtitle: app.i18n.t('Installation materials'),
+        title: app.i18n.t('Cable ties, ducts, fasteners'),
         description: app.i18n.t(
           'Find stunning women\'s cocktail dresses and party dresses. Stand out in lace and metallic cocktail dresses from all your favorite brands.',
         ),
@@ -160,8 +160,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-C',
-        subtitle: app.i18n.t('T-Shirts'),
-        title: app.i18n.t('The Office Life'),
+        subtitle: app.i18n.t('Industrial Products'),
+        title: app.i18n.t('Motors, drives, sensors'),
         image: '/homepage/bannerC.webp',
         imageConfig: {
           fit: 'cover',
@@ -174,6 +174,62 @@ export default defineComponent({
       },
       {
         slot: 'banner-D',
+        subtitle: app.i18n.t('Summer Sandals'),
+        title: app.i18n.t('Eco Sandals'),
+        image: '/homepage/bannerG.webp',
+        imageConfig: {
+          fit: 'cover',
+          width: isDesktop ? 332 : 328,
+          height: isDesktop ? 400 : 343,
+          format: 'webp',
+        },
+        class: 'sf-banner--slim',
+        link: '/women/women-shoes-sandals',
+      },
+      {
+        slot: 'banner-E',
+        subtitle: app.i18n.t('Summer Sandals'),
+        title: app.i18n.t('Eco Sandals'),
+        image: '/homepage/bannerG.webp',
+        imageConfig: {
+          fit: 'cover',
+          width: isDesktop ? 332 : 328,
+          height: isDesktop ? 400 : 343,
+          format: 'webp',
+        },
+        class: 'sf-banner--slim',
+        link: '/women/women-shoes-sandals',
+      },
+      {
+        slot: 'banner-F',
+        subtitle: app.i18n.t('Summer Sandals'),
+        title: app.i18n.t('Eco Sandals'),
+        image: '/homepage/bannerG.webp',
+        imageConfig: {
+          fit: 'cover',
+          width: isDesktop ? 332 : 328,
+          height: isDesktop ? 400 : 343,
+          format: 'webp',
+        },
+        class: 'sf-banner--slim',
+        link: '/women/women-shoes-sandals',
+      },
+      {
+        slot: 'banner-G',
+        subtitle: app.i18n.t('Summer Sandals'),
+        title: app.i18n.t('Eco Sandals'),
+        image: '/homepage/bannerG.webp',
+        imageConfig: {
+          fit: 'cover',
+          width: isDesktop ? 332 : 328,
+          height: isDesktop ? 400 : 343,
+          format: 'webp',
+        },
+        class: 'sf-banner--slim',
+        link: '/women/women-shoes-sandals',
+      },
+      {
+        slot: 'banner-H',
         subtitle: app.i18n.t('Summer Sandals'),
         title: app.i18n.t('Eco Sandals'),
         image: '/homepage/bannerG.webp',

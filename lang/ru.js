@@ -306,4 +306,23 @@ export default {
   "The user account data was successfully updated!":"Данные аккаунта успешно обновлены!",
   "You submitted your review for moderation.": "Вы отправили свой отзыв на модерацию.",
   "Starting at": "Начиная с",
+    //Banner Grid translations (Home.vue)
+  'Industrial Components and Materials': 'Промышленные компоненты и материалы',
+  'Quality products for your projects': 'Качественная продукция для ваших проектов',
+  'Installation materials': 'Монтажные материалы',
+  'Cable ties, ducts, fasteners': 'Кабельные стяжки, каналы, крепеж',
+  'Industrial Products': 'Промышленная продукция',
+  'Motors, drives, sensors': 'Двигатели, приводы, датчики',
+  'Electrical components': 'Электротехнические компоненты',
+  'Switches, relays, connectors': 'Выключатели, реле, разъемы',
+  'Power supplies': 'Источники питания',
+  'Transformers, UPS, batteries': 'Трансформаторы, ИБП, аккумуляторы',
+  'Control and signaling': 'Управление и сигнализация',
+  'PLC, HMI, indicators': 'ПЛК, HMI, индикаторы',
+  'Measuring devices': 'Измерительные приборы',
+  'Multimeters, sensors, gauges': 'Мультиметры, датчики, измерители',
+  'Enclosures': 'Корпуса',
+  'Boxes, cabinets, panels': 'Ящики, шкафы, панели',
+  'Cables': 'Кабели',
+  'Power, control, fiber optic': 'Силовые, контрольные, оптоволоконные'
 };

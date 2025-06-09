@@ -306,4 +306,23 @@ export default {
   "The user account data was successfully updated!":"Kasutajakonto andmed uuendati edukalt!",
   "You submitted your review for moderation.": "Sa esitasid oma arvamuse modereerimiseks.",
   "Starting at": "Alates",
+    //Banner Grid translations (Home.vue)
+  'Industrial Components and Materials': 'Tööstuslikud komponendid ja materjalid',
+  'Quality products for your projects': 'Kvaliteetsed tooted teie projektideks',
+  'Installation materials': 'Paigaldusmaterjalid',
+  'Cable ties, ducts, fasteners': 'Köitmed, kanalid, kinnitusdetailid',
+  'Industrial Products': 'Tööstustooted',
+  'Motors, drives, sensors': 'Mootorid, ajamid, andurid',
+  'Electrical components': 'Elektrikomponendid',
+  'Switches, relays, connectors': 'Lülitid, releed, ühendused',
+  'Power supplies': 'Toiteallikad',
+  'Transformers, UPS, batteries': 'Trafod, UPS-id, akud',
+  'Control and signaling': 'Juhtimine ja signalisatsioon',
+  'PLC, HMI, indicators': 'PLC, HMI, indikaatorid',
+  'Measuring devices': 'Mõõteriistad',
+  'Multimeters, sensors, gauges': 'Multimeetrid, andurid, mõõdikud',
+  'Enclosures': 'Korpused',
+  'Boxes, cabinets, panels': 'Karbid, kapid, paneelid',
+  'Cables': 'Kaablid',
+  'Power, control, fiber optic': 'Toite-, juhtimis-, kiudoptilised'
 };

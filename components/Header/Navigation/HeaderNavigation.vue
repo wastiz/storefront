@@ -5,7 +5,7 @@
   >
     <div class="sf-header-navigation-item__item sf-header-navigation-item__item--desktop">
       <HeaderNavigationItem
-        v-for="(category, index) in categoryTree"
+        v-for="(category, index) in categoryTree.slice(0, 3)" 
         :key="index"
         ref="lvl0CatRefs"
         :data-testid="category.uid"

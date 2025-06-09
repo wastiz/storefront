@@ -13,8 +13,8 @@
       image-tag="nuxt-img"
     />
     <LazyHydrate when-visible>
-      <SfBannerGrid
-        :banner-grid="1"
+      	<SfBannerGrid
+        :banner-grid="3"
         class="banner-grid"
       >
         <template
@@ -174,8 +174,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-D',
-        subtitle: app.i18n.t('Summer Sandals'),
-        title: app.i18n.t('Eco Sandals'),
+        subtitle: app.i18n.t('Electrical components'),
+        title: app.i18n.t('Switches, relays, connectors'),
         image: '/homepage/bannerG.webp',
         imageConfig: {
           fit: 'cover',
@@ -188,8 +188,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-E',
-        subtitle: app.i18n.t('Summer Sandals'),
-        title: app.i18n.t('Eco Sandals'),
+        subtitle: app.i18n.t('Power supplies'),
+        title: app.i18n.t('Transformers, UPS, batteries'),
         image: '/homepage/bannerG.webp',
         imageConfig: {
           fit: 'cover',
@@ -202,8 +202,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-F',
-        subtitle: app.i18n.t('Summer Sandals'),
-        title: app.i18n.t('Eco Sandals'),
+        subtitle: app.i18n.t('Control and signaling'),
+        title: app.i18n.t('PLC, HMI, indicators'),
         image: '/homepage/bannerG.webp',
         imageConfig: {
           fit: 'cover',
@@ -216,8 +216,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-G',
-        subtitle: app.i18n.t('Summer Sandals'),
-        title: app.i18n.t('Eco Sandals'),
+        subtitle: app.i18n.t('Measuring devices'),
+        title: app.i18n.t('Multimeters, sensors, gauges'),
         image: '/homepage/bannerG.webp',
         imageConfig: {
           fit: 'cover',
@@ -230,8 +230,8 @@ export default defineComponent({
       },
       {
         slot: 'banner-H',
-        subtitle: app.i18n.t('Summer Sandals'),
-        title: app.i18n.t('Eco Sandals'),
+        subtitle: app.i18n.t('Enclosures'),
+        title: app.i18n.t('Boxes, cabinets, panels'),
         image: '/homepage/bannerG.webp',
         imageConfig: {
           fit: 'cover',

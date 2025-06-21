@@ -7,9 +7,6 @@
       <template #logo>
         <HeaderLogo />
       </template>
-      <template #navigation>
-        <HeaderNavigation :category-tree="categoryTree" />
-      </template>
       <template #aside>
         <div class="sf-header__switchers">
           <CurrencySelector
@@ -21,6 +18,9 @@
             class="smartphone-only"
           />
         </div>
+      </template>
+      <template #navigation>
+        <HeaderNavigation :category-tree="categoryTree" />
       </template>
       <template #header-icons="{ activeIcon }">
         <div class="sf-header__icons">

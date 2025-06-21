@@ -13,28 +13,30 @@
       image-tag="nuxt-img"
     />
     <LazyHydrate when-visible>
-      	<SfBannerGrid
-        :banner-grid="3"
-        class="banner-grid"
-      >
-        <template
-          v-for="item in banners"
-          #[item.slot]
-        >
-          <SfBanner
-            :key="item.slot"
-            :title="item.title"
-            :subtitle="item.subtitle"
-            :description="item.description"
-            :button-text="item.buttonText"
-            image-tag="nuxt-img"
-            :image="item.image"
-            :nuxt-img-config="item.imageConfig"
-            :class="item.class"
-          />
-        </template>
-      </SfBannerGrid>
-    </LazyHydrate>
+		<div class="custom-banner-grid">
+			<div
+				class="custom-banner"
+				v-for="(banner, index) in banners"
+				:key="index"
+			>
+				<div class="custom-banner__icon">
+				<img :src="banner.image.desktop || banner.image" alt="icon" />
+				</div>
+				<div class="custom-banner__content">
+				<div class="custom-banner__body">
+					<h3 class="custom-banner__title">{{ banner.title }}</h3>
+					<p class="custom-banner__description">{{ banner.subtitle }}</p>
+				</div>
+				<NuxtLink
+				:to="{ path: $route.path + banner.link }"
+				class="custom-banner__button sf-link hero__button"
+				>
+				{{ $t('View') }}
+				</NuxtLink>
+				</div>
+			</div>
+		</div>
+	</LazyHydrate>
     <LoadWhenVisible>
       <NewProducts
         class="products"
@@ -74,7 +76,7 @@ import {
 } from '@nuxtjs/composition-api';
 import LazyHydrate from 'vue-lazy-hydration';
 import { useCache, CacheTagPrefix } from '@vue-storefront/cache';
-import { SfBanner, SfBannerGrid } from '@storefront-ui/vue';
+import { SfBanner, SfBannerGrid, SfButton } from '@storefront-ui/vue';
 import { CmsPage } from '~/modules/GraphQL/types';
 import HeroSection from '~/components/HeroSection.vue';
 import { getMetaInfo } from '~/helpers/getMetaInfo';
@@ -119,17 +121,17 @@ export default defineComponent({
     const banners = ref([
       {
         slot: 'banner-A',
-        subtitle: app.i18n.t('Industrial Components and Materials'),
-        title: app.i18n.t('Quality products for your projects'),
+		title: app.i18n.t('Industrial Components and Materials'),
+        subtitle: app.i18n.t('Quality products for your projects'),
         description: app.i18n.t(
           'Find stunning women\'s cocktail dresses and party dresses. Stand out in lace and metallic cocktail dresses from all your favorite brands.',
         ),
         buttonText: app.i18n.t('Shop now'),
         image: {
           mobile:
-            '/homepage/bannerB.webp',
+            '/homepage/bannerA.webp',
           desktop:
-            '/homepage/bannerF.webp',
+            '/homepage/bannerA.webp',
         },
         imageConfig: {
           fit: 'cover',
@@ -138,17 +140,17 @@ export default defineComponent({
           format: 'webp',
         },
         class: 'sf-banner--slim desktop-only',
-        link: '/women/women-clothing-skirts',
+        link: '/industrial-products',
       },
       {
         slot: 'banner-B',
-        subtitle: app.i18n.t('Installation materials'),
-        title: app.i18n.t('Cable ties, ducts, fasteners'),
+		title: app.i18n.t('Installation materials'),
+        subtitle: app.i18n.t('Cable ties, ducts, fasteners'),
         description: app.i18n.t(
           'Find stunning women\'s cocktail dresses and party dresses. Stand out in lace and metallic cocktail dresses from all your favorite brands.',
         ),
         buttonText: app.i18n.t('Shop now'),
-        image: '/homepage/bannerE.webp',
+        image: '/homepage/bannerB.webp',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 496 : 328,
@@ -156,12 +158,12 @@ export default defineComponent({
           format: 'webp',
         },
         class: 'sf-banner--slim banner-central desktop-only',
-        link: '/women/women-clothing-dresses',
+        link: '/installation-materials',
       },
       {
         slot: 'banner-C',
-        subtitle: app.i18n.t('Industrial Products'),
-        title: app.i18n.t('Motors, drives, sensors'),
+		title: app.i18n.t('Industrial Products'),
+        subtitle: app.i18n.t('Motors, drives, sensors'),
         image: '/homepage/bannerC.webp',
         imageConfig: {
           fit: 'cover',
@@ -170,13 +172,13 @@ export default defineComponent({
           format: 'webp',
         },
         class: 'sf-banner--slim banner__tshirt',
-        link: '/women/women-clothing-shirts',
+        link: '/industrial-products',
       },
       {
         slot: 'banner-D',
-        subtitle: app.i18n.t('Electrical components'),
-        title: app.i18n.t('Switches, relays, connectors'),
-        image: '/homepage/bannerG.webp',
+		title: app.i18n.t('Electrical components'),
+        subtitle: app.i18n.t('Switches, relays, connectors'),
+        image: '/homepage/bannerD.webp',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 332 : 328,
@@ -184,13 +186,13 @@ export default defineComponent({
           format: 'webp',
         },
         class: 'sf-banner--slim',
-        link: '/women/women-shoes-sandals',
+        link: '/',
       },
       {
         slot: 'banner-E',
-        subtitle: app.i18n.t('Power supplies'),
-        title: app.i18n.t('Transformers, UPS, batteries'),
-        image: '/homepage/bannerG.webp',
+		title: app.i18n.t('Power supplies'),
+        subtitle: app.i18n.t('Transformers, UPS, batteries'),
+        image: '/homepage/bannerE.webp',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 332 : 328,
@@ -202,9 +204,9 @@ export default defineComponent({
       },
       {
         slot: 'banner-F',
-        subtitle: app.i18n.t('Control and signaling'),
-        title: app.i18n.t('PLC, HMI, indicators'),
-        image: '/homepage/bannerG.webp',
+		title: app.i18n.t('Control and signaling'),
+        subtitle: app.i18n.t('PLC, HMI, indicators'),
+        image: '/homepage/bannerF.jpg',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 332 : 328,
@@ -216,9 +218,9 @@ export default defineComponent({
       },
       {
         slot: 'banner-G',
-        subtitle: app.i18n.t('Measuring devices'),
-        title: app.i18n.t('Multimeters, sensors, gauges'),
-        image: '/homepage/bannerG.webp',
+		title: app.i18n.t('Measuring devices'),
+        subtitle: app.i18n.t('Multimeters, sensors, gauges'),
+        image: '/homepage/bannerG.jpg',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 332 : 328,
@@ -230,9 +232,9 @@ export default defineComponent({
       },
       {
         slot: 'banner-H',
-        subtitle: app.i18n.t('Enclosures'),
-        title: app.i18n.t('Boxes, cabinets, panels'),
-        image: '/homepage/bannerG.webp',
+		title: app.i18n.t('Enclosures'),
+        subtitle: app.i18n.t('Boxes, cabinets, panels'),
+        image: '/homepage/bannerH.jpg',
         imageConfig: {
           fit: 'cover',
           width: isDesktop ? 332 : 328,
@@ -322,34 +324,86 @@ export default defineComponent({
   }
 }
 
-.banner-grid {
-  --banner-container-width: 50%;
-  margin: var(--spacer-xl) 0;
+// Banners
+.custom-banner-grid {
+  display: grid;
+  gap: var(--spacer-sm);
 
-  ::v-deep .sf-link:hover {
-    color: var(--c-white);
-  }
+  // 2 в ряд на мобильных
+  grid-template-columns: repeat(2, 1fr);
 
   @include for-desktop {
-    margin: var(--spacer-2xl) 0;
-    ::v-deep .sf-link {
-      --button-width: auto;
+    // 4 в ряд на десктопе
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacer-lg);
+  }
+}
+
+.custom-banner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacer-lg);
+  border: 1px solid var(--c-light);
+  border-radius: var(--border-radius);
+  background: var(--c-white);
+  text-align: center;
+  transition: box-shadow 0.3s;
+  height: 80%;
+
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  &__icon img {
+    height: 120px;
+    margin-bottom: var(--spacer-base);
+    object-fit: contain;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  &__body {
+    flex-grow: 1;
+  }
+
+  &__title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: var(--spacer-xs);
+  }
+
+  &__description {
+    font-size: 14px;
+    margin-bottom: var(--spacer-sm);
+    color: var(--c-text-muted);
+  }
+
+  &__button {
+    padding: var(--spacer-xs) var(--spacer-sm);
+    background-color: var(--c-primary);
+    color: var(--c-white);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.3s;
+    text-align: center;
+    display: inline-block;
+
+    &:hover {
+      background-color: var(--c-primary-dark);
     }
   }
 }
 
-.banner {
-  &__tshirt {
-    background-position: left;
-  }
-
-  &-central {
-    @include for-desktop {
-      --banner-container-flex: 0 0 70%;
-    }
-  }
-}
-
+// Products
 .similar-products {
   display: flex;
   justify-content: space-between;

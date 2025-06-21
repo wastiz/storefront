@@ -67,7 +67,6 @@ export default defineComponent({
   @include for-desktop {
     align-items: center;
     display: inline-flex;
-    min-height: 80px;
   }
 }
 </style>

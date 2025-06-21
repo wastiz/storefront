@@ -93,6 +93,8 @@ export default defineComponent({
       loadStores();
     });
 
+    console.log()
+
     return {
       availableStores,
       changeStore,

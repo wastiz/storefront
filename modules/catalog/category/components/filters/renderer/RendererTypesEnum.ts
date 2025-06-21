@@ -3,6 +3,7 @@ enum RendererTypesEnum {
   CHECKBOX = 'CheckboxType',
   SWATCH_COLOR = 'SwatchColorType',
   YES_NO = 'YesNoType',
+  RANGE = 'RangeType',
   DEFAULT = 'CheckboxType',
 }
 

@@ -55,6 +55,8 @@ export default defineComponent({
   setup() {
     const { config } = useConfig();
 
+    console.log(config)
+
     const isLangModalOpen = ref(false);
 
     return {

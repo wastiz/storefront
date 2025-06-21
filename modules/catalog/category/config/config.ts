@@ -3,6 +3,7 @@ import type { FilterConfigInterface } from '~/modules/catalog/category/config/Fi
 
 export enum FilterTypeEnum {
   RADIO = 'radio',
+  RANGE = 'range',
   CHECKBOX = 'checkbox',
   SWATCH_COLOR = 'swatch_color',
   YES_NO = 'yes_no',
@@ -20,8 +21,8 @@ export default function config(): FilterConfigInterface[] {
   return [
     {
       attrCode: 'price',
-      type: FilterTypeEnum.RADIO,
-      component: RendererTypesEnum.RADIO,
+      type: FilterTypeEnum.RANGE,
+      component: RendererTypesEnum.RANGE,
     },
     {
       attrCode: 'size',

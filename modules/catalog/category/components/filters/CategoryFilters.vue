@@ -44,17 +44,10 @@
                 <component
                     :is="getFilterConfig(filter.attribute_code).component"
                     :filter="filter"
-                    @selectFilter="selectFilter(filter, $event)"
+                    @selectFilter="instantUpdateFilters(filter, $event)"
                 />
             </div>
             <div class="filters__buttons">
-                <SfButton
-                    class="sf-button--full-width"
-                    data-testid="apply-filters"
-                    @click="doApplyFilters"
-                >
-                    {{ $t('Apply filters') }}
-                </SfButton>
                 <SfButton
                     class="sf-button--full-width filters__button-clear"
                     data-testid="clear-filters"
@@ -88,7 +81,7 @@
                         <component
                             :is="getFilterConfig(filter.attribute_code).component"
                             :filter="filter"
-                            @selectFilter="selectFilter(filter, $event)"
+                            @selectFilter="instantUpdateFilters(filter, $event)"
                         />
                     </SfAccordionItem>
                 </div>
@@ -132,7 +125,7 @@ import { getFilterConfig, isFilterEnabled } from '~/modules/catalog/category/con
 import SelectedFilters from '~/modules/catalog/category/components/filters/FiltersSidebar/SelectedFilters.vue';
 import { getProductFilterByCategoryCommand } from '~/modules/catalog/category/components/filters/command/getProductFilterByCategoryCommand';
 
-import type { Aggregation } from '~/modules/GraphQL/types';
+import type { Aggregation, AggregationOption } from '~/modules/GraphQL/types';
 import type { SelectedFiltersInterface } from './useFilters';
 import { useFilters } from './useFilters';
 
@@ -182,6 +175,11 @@ export default defineComponent({
             removableFilters.value = getRemovableFilters(filters.value, selectedFilters.value);
         };
 
+        const instantUpdateFilters = (filter: Aggregation, event: AggregationOption) => {
+            selectFilter(filter, event)
+            doApplyFilters()
+        }
+
         const doApplyFilters = () => {
             changeFilters(selectedFilters.value, false);
             updateRemovableFilters();
@@ -227,6 +225,7 @@ export default defineComponent({
 
         return {
             selectFilter,
+            instantUpdateFilters,
             doApplyFilters,
             doRemoveFilter,
             doClearFilters,

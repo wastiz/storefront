@@ -1,7 +1,6 @@
 <template>
     <div class="range-filter">
         <SfHeading
-            :key="`filter-title-${filter.attribute_code}`"
             :level="4"
             :title="filter.label"
             class="filters__title sf-heading--left"
@@ -11,373 +10,288 @@
             <div
                 ref="slider"
                 class="slider"
-                :data-min="min"
-                :data-max="max"
-                :data-step="step"
+                :style="{ '--min': min, '--max': max }"
             >
-                <div ref="touchLeft" class="slider-touch slider-touch-left"><span></span></div>
-                <div ref="touchRight" class="slider-touch slider-touch-right"><span></span></div>
-                <div class="slider-line">
-                    <span ref="lineSpan"></span>
-                </div>
+                <div
+                    ref="track"
+                    class="slider-track"
+                ></div>
+                <div
+                    ref="range"
+                    class="slider-range"
+                ></div>
+                <div
+                    ref="thumbLeft"
+                    class="slider-thumb slider-thumb-left"
+                    @mousedown="startDrag('left', $event)"
+                    @touchstart="startDrag('left', $event)"
+                ></div>
+                <div
+                    ref="thumbRight"
+                    class="slider-thumb slider-thumb-right"
+                    @mousedown="startDrag('right', $event)"
+                    @touchstart="startDrag('right', $event)"
+                ></div>
             </div>
         </div>
 
-        <div class="range-filter__labels">
-            <span>{{ currentMin }}</span>
-            <span>{{ currentMax }}</span>
+        <div class="range-values">
+            <span>{{ formatValue(currentMin) }}</span>
+            <span>{{ formatValue(currentMax) }}</span>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, PropType, nextTick } from '@nuxtjs/composition-api';
+import { defineComponent, ref, onMounted, watch } from '@nuxtjs/composition-api';
 import { SfHeading } from '@storefront-ui/vue';
 import type { Aggregation, AggregationOption } from '~/modules/GraphQL/types';
 
 export default defineComponent({
-    name: 'RangeSlider',
+    name: 'RangeType',
     components: { SfHeading },
     props: {
         filter: {
-            type: Object as PropType<Aggregation>,
-            required: true,
+            type: Object as () => Aggregation,
+            required: true
         },
-        rangeMin: Number,
-        rangeMax: Number,
+        rangeMin: {
+            type: Number,
+            default: 0
+        },
+        rangeMax: {
+            type: Number,
+            default: 100
+        }
     },
     setup(props, { emit }) {
         const slider = ref<HTMLElement | null>(null);
-        const touchLeft = ref<HTMLElement | null>(null);
-        const touchRight = ref<HTMLElement | null>(null);
-        const lineSpan = ref<HTMLElement | null>(null);
+        const track = ref<HTMLElement | null>(null);
+        const range = ref<HTMLElement | null>(null);
+        const thumbLeft = ref<HTMLElement | null>(null);
+        const thumbRight = ref<HTMLElement | null>(null);
 
         const min = ref(0);
         const max = ref(100);
-        const step = 1;
-        const isInitialized = ref(false);
-
         const currentMin = ref(0);
         const currentMax = ref(100);
+        const activeThumb = ref<'left' | 'right' | null>(null);
+        const sliderRect = ref<DOMRect | null>(null);
 
-        // Инициализация диапазона из aggregation.options
-        const initializeRange = () => {
-            try {
-                const options = props.filter?.options || [];
+        const initializeValues = () => {
+            const options = props.filter.options || [];
+            const values = options
+                .map(opt => {
+                    const num = Number(opt.value);
+                    return isNaN(num) ? null : Math.round(num);
+                })
+                .filter(v => v !== null) as number[];
 
-                if (options.length === 0) {
-                    console.warn('No filter options available');
-                    min.value = 0;
-                    max.value = 100;
-                    currentMin.value = props.rangeMin ?? 0;
-                    currentMax.value = props.rangeMax ?? 100;
-                    return;
-                }
-
-                // Извлекаем числовые значения из options
-                const values = options
-                    .map(opt => Number(opt.value))
-                    .filter(val => Number.isFinite(val))
-                    .sort((a, b) => a - b);
-
-                if (values.length === 0) {
-                    console.warn('No valid numeric values in filter options');
-                    min.value = 0;
-                    max.value = 100;
-                    currentMin.value = props.rangeMin ?? 0;
-                    currentMax.value = props.rangeMax ?? 100;
-                    return;
-                }
-
-                min.value = values[0];
-                max.value = values[values.length - 1];
-
-                // Убеждаемся что min !== max
-                if (min.value === max.value) {
-                    max.value = min.value + 1;
-                }
-
-                // Устанавливаем текущие значения
-                currentMin.value = props.rangeMin ?? min.value;
-                currentMax.value = props.rangeMax ?? max.value;
-
-                // Проверяем что текущие значения в допустимых пределах
-                currentMin.value = Math.max(min.value, Math.min(currentMin.value, max.value));
-                currentMax.value = Math.max(min.value, Math.min(currentMax.value, max.value));
-
-            } catch (error) {
-                console.error('Error initializing range:', error);
-                min.value = 0;
-                max.value = 100;
-                currentMin.value = props.rangeMin ?? 0;
-                currentMax.value = props.rangeMax ?? 100;
+            if (values.length > 0) {
+                min.value = Math.min(...values);
+                max.value = Math.max(...values);
+            } else {
+                min.value = Math.round(props.rangeMin || 0);
+                max.value = Math.round(props.rangeMax || 100);
             }
+
+            if (min.value >= max.value) {
+                max.value = min.value + 1;
+            }
+
+            currentMin.value = min.value;
+            currentMax.value = max.value;
         };
 
-        const updateLabels = (leftVal: number, rightVal: number) => {
-            if (!Number.isFinite(leftVal) || !Number.isFinite(rightVal)) {
-                return;
-            }
-
-            currentMin.value = Math.min(leftVal, rightVal);
-            currentMax.value = Math.max(leftVal, rightVal);
+        const formatValue = (value: number) => {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
         };
 
-        const emitChangeEvent = () => {
-            if (!Number.isFinite(currentMin.value) || !Number.isFinite(currentMax.value)) {
-                return;
+        const getPercentage = (value: number) => {
+            return ((value - min.value) / (max.value - min.value)) * 100;
+        };
+
+        const updatePositions = () => {
+            if (!slider.value || !range.value || !thumbLeft.value || !thumbRight.value) return;
+
+            const leftPercent = getPercentage(currentMin.value);
+            const rightPercent = getPercentage(currentMax.value);
+
+            thumbLeft.value.style.left = `${leftPercent}%`;
+            thumbRight.value.style.right = `${100 - rightPercent}%`;
+            range.value.style.left = `${leftPercent}%`;
+            range.value.style.right = `${100 - rightPercent}%`;
+        };
+
+        const startDrag = (thumb: 'left' | 'right', e: MouseEvent | TouchEvent) => {
+            e.preventDefault();
+            activeThumb.value = thumb;
+            sliderRect.value = slider.value?.getBoundingClientRect() || null;
+
+            document.addEventListener('mousemove', handleDrag);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', handleDrag);
+            document.addEventListener('touchend', stopDrag);
+        };
+
+        const handleDrag = (e: MouseEvent | TouchEvent) => {
+            if (!activeThumb.value || !sliderRect.value) return;
+
+            const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            let percentage = (clientX - sliderRect.value.left) / sliderRect.value.width;
+            percentage = Math.max(0, Math.min(1, percentage));
+
+            const newValue = Math.round(min.value + percentage * (max.value - min.value));
+
+            if (activeThumb.value === 'left') {
+                currentMin.value = Math.min(newValue, currentMax.value - 1);
+            } else {
+                currentMax.value = Math.max(newValue, currentMin.value + 1);
             }
 
-            // Создаем AggregationOption с диапазоном
-            const aggregationOption: AggregationOption = {
-                value: `${currentMin.value}_${currentMax.value}`,
-                label: `${currentMin.value} - ${currentMax.value}`,
-                count: null, // Или можно вычислить количество товаров в диапазоне
+            updatePositions();
+            emitChange();
+        };
+
+        const stopDrag = () => {
+            activeThumb.value = null;
+            sliderRect.value = null;
+
+            document.removeEventListener('mousemove', handleDrag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchmove', handleDrag);
+            document.removeEventListener('touchend', stopDrag);
+        };
+
+        const emitChange = () => {
+            const option: AggregationOption = {
+                value: `${Math.round(currentMin.value)}_${Math.round(currentMax.value)}`,
+                label: `${formatValue(currentMin.value)} - ${formatValue(currentMax.value)}`,
+                count: null
             };
-
-            emit('selectFilter', aggregationOption);
+            emit('selectFilter', option);
         };
 
-        const updateLine = () => {
-            if (!touchLeft.value || !touchRight.value || !lineSpan.value) return;
+        onMounted(() => {
+            initializeValues();
+            updatePositions();
+        });
 
-            const left = touchLeft.value.offsetLeft;
-            const right = touchRight.value.offsetLeft;
-
-            if (!Number.isFinite(left) || !Number.isFinite(right)) return;
-
-            lineSpan.value.style.marginLeft = `${left}px`;
-            lineSpan.value.style.width = `${Math.max(0, right - left)}px`;
-        };
-
-        const calculateValues = () => {
-            if (!slider.value || !touchLeft.value || !touchRight.value) {
-                return;
-            }
-
-            const range = max.value - min.value;
-            const sliderWidth = slider.value.offsetWidth;
-            const normalizeFact = 26;
-            const effectiveWidth = sliderWidth - normalizeFact;
-
-            if (effectiveWidth <= 0 || range <= 0 || !Number.isFinite(range)) {
-                return;
-            }
-
-            const leftOffset = touchLeft.value.offsetLeft;
-            const rightOffset = touchRight.value.offsetLeft;
-
-            if (!Number.isFinite(leftOffset) || !Number.isFinite(rightOffset)) {
-                return;
-            }
-
-            const leftVal = Math.round((leftOffset / effectiveWidth) * range + min.value);
-            const rightVal = Math.round((rightOffset / effectiveWidth) * range + min.value);
-
-            if (!Number.isFinite(leftVal) || !Number.isFinite(rightVal)) {
-                return;
-            }
-
-            updateLabels(leftVal, rightVal);
-            emitChangeEvent();
-        };
-
-        const setSliderPosition = (element: HTMLElement, value: number) => {
-            if (!slider.value || !Number.isFinite(value)) return;
-
-            const range = max.value - min.value;
-            const sliderWidth = slider.value.offsetWidth;
-            const normalizeFact = 26;
-            const effectiveWidth = sliderWidth - normalizeFact;
-
-            if (effectiveWidth <= 0 || range <= 0) return;
-
-            const normalizedValue = Math.max(0, Math.min(1, (value - min.value) / range));
-            const position = normalizedValue * effectiveWidth;
-
-            element.style.left = `${position}px`;
-        };
-
-        const addDrag = (el: HTMLElement, isLeft: boolean) => {
-            let startX = 0;
-            let isDragging = false;
-
-            const onMove = (e: MouseEvent | TouchEvent) => {
-                if (!isDragging) return;
-
-                e.preventDefault();
-                const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
-                let x = clientX - startX;
-
-                if (!slider.value) return;
-
-                const sliderWidth = slider.value.offsetWidth;
-                const maxX = sliderWidth - el.offsetWidth;
-
-                x = Math.max(0, Math.min(x, maxX));
-
-                if (isLeft && touchRight.value) {
-                    const maxLeftX = touchRight.value.offsetLeft - 10;
-                    x = Math.min(x, maxLeftX);
-                } else if (!isLeft && touchLeft.value) {
-                    const minRightX = touchLeft.value.offsetLeft + 10;
-                    x = Math.max(x, minRightX);
-                }
-
-                el.style.left = `${x}px`;
-                updateLine();
-                calculateValues();
-            };
-
-            const onStop = () => {
-                isDragging = false;
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onStop);
-                document.removeEventListener('touchmove', onMove);
-                document.removeEventListener('touchend', onStop);
-                document.body.style.userSelect = '';
-            };
-
-            const onStart = (e: MouseEvent | TouchEvent) => {
-                e.preventDefault();
-                isDragging = true;
-
-                const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
-                const rect = el.getBoundingClientRect();
-                startX = clientX - rect.left;
-
-                document.addEventListener('mousemove', onMove, { passive: false });
-                document.addEventListener('mouseup', onStop);
-                document.addEventListener('touchmove', onMove, { passive: false });
-                document.addEventListener('touchend', onStop);
-                document.body.style.userSelect = 'none';
-            };
-
-            el.addEventListener('mousedown', onStart);
-            el.addEventListener('touchstart', onStart, { passive: false });
-        };
-
-        const initializeSlider = () => {
-            if (!slider.value || !touchLeft.value || !touchRight.value || !lineSpan.value) {
-                return;
-            }
-
-            if (isInitialized.value) return;
-
-            const sliderWidth = slider.value.offsetWidth;
-
-            if (sliderWidth === 0) {
-                setTimeout(initializeSlider, 100);
-                return;
-            }
-
-            // Устанавливаем начальные позиции
-            setSliderPosition(touchLeft.value, currentMin.value);
-            setSliderPosition(touchRight.value, currentMax.value);
-
-            updateLine();
-
-            addDrag(touchLeft.value, true);
-            addDrag(touchRight.value, false);
-
-            isInitialized.value = true;
-        };
-
-        onMounted(async () => {
-            initializeRange();
-            await nextTick();
-
-            setTimeout(() => {
-                initializeSlider();
-            }, 50);
+        watch([min, max], () => {
+            currentMin.value = min.value;
+            currentMax.value = max.value;
+            updatePositions();
         });
 
         return {
             slider,
-            touchLeft,
-            touchRight,
-            lineSpan,
-            currentMin,
-            currentMax,
+            track,
+            range,
+            thumbLeft,
+            thumbRight,
             min,
             max,
-            step,
+            currentMin,
+            currentMax,
+            startDrag,
+            formatValue
         };
-    },
+    }
 });
 </script>
 
 <style scoped lang="scss">
+.range-filter {
+    padding: 0 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
 .slider-container {
-    width: 100%;
-    max-width: 320px;
+    position: relative;
+    height: 40px;
+    display: flex;
+    align-items: center;
 }
 
 .slider {
     position: relative;
-    height: 36px;
     width: 100%;
-    user-select: none;
-}
-
-.slider-touch {
-    position: absolute;
-    height: 20px;
-    width: 20px;
-    padding: 6px;
-    z-index: 2;
-    cursor: pointer;
-
-    span {
-        display: block;
-        width: 100%;
-        height: 100%;
-        background: #f0f0f0;
-        border: 1px solid #a4a4a4;
-        border-radius: 50%;
-        transition: background-color 0.2s ease;
-    }
-
-    &:hover span {
-        background: #e0e0e0;
-    }
-
-    &:active span {
-        background: #d0d0d0;
-    }
-}
-
-.slider-line {
-    position: absolute;
-    width: calc(100% - 36px);
-    left: 18px;
-    top: 16px;
     height: 4px;
-    border-radius: 4px;
-    background: #f0f0f0;
-    z-index: 0;
-    overflow: hidden;
+    background: var(--c-light);
+    border-radius: 2px;
+}
 
-    span {
-        display: block;
-        height: 100%;
-        width: 0%;
-        background: var(--button-background, var(--c-primary));
-        transition: width 0.1s ease, margin-left 0.1s ease;
+.slider-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 2px;
+    background-color: var(--c-light);
+}
+
+.slider-range {
+    position: absolute;
+    height: 100%;
+    background-color: var(--c-primary);
+    border-radius: 2px;
+}
+
+.slider-thumb {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border: 2px solid var(--c-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    cursor: pointer;
+    z-index: 2;
+    touch-action: none;
+    user-select: none;
+
+    &:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    &:active {
+        transform: translate(-50%, -50%) scale(1.2);
     }
 }
 
-.range-filter__labels {
+.slider-thumb-left {
+    left: 0;
+}
+
+.slider-thumb-right {
+    right: 0;
+    transform: translate(50%, -50%);
+
+    &:hover {
+        transform: translate(50%, -50%) scale(1.1);
+    }
+
+    &:active {
+        transform: translate(50%, -50%) scale(1.2);
+    }
+}
+
+.range-values {
     display: flex;
     justify-content: space-between;
-    margin-top: 8px;
-    font-size: 14px;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
     color: var(--c-text);
 }
 
-.range-filter {
-    .filters__title {
-        margin-bottom: 12px;
-    }
+.filters__title {
+    margin-bottom: 1rem;
 }
 </style>

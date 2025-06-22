@@ -31,9 +31,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, PropType } from '@nuxtjs/composition-api';
+import { defineComponent, onMounted, ref, PropType, nextTick } from '@nuxtjs/composition-api';
 import { SfHeading } from '@storefront-ui/vue';
-import type { Aggregation } from '~/modules/GraphQL/types';
+import type { Aggregation, AggregationOption } from '~/modules/GraphQL/types';
 
 export default defineComponent({
     name: 'RangeSlider',
@@ -52,105 +52,244 @@ export default defineComponent({
         const touchRight = ref<HTMLElement | null>(null);
         const lineSpan = ref<HTMLElement | null>(null);
 
-        const values = props.filter.options.map(opt => Number(opt.value)).sort((a, b) => a - b);
-        const min = ref(Math.min(...values));
-        const max = ref(Math.max(...values));
+        const min = ref(0);
+        const max = ref(100);
         const step = 1;
+        const isInitialized = ref(false);
 
-        const currentMin = ref(min.value);
-        const currentMax = ref(max.value);
+        const currentMin = ref(0);
+        const currentMax = ref(100);
+
+        // Инициализация диапазона из aggregation.options
+        const initializeRange = () => {
+            try {
+                const options = props.filter?.options || [];
+
+                if (options.length === 0) {
+                    console.warn('No filter options available');
+                    min.value = 0;
+                    max.value = 100;
+                    currentMin.value = props.rangeMin ?? 0;
+                    currentMax.value = props.rangeMax ?? 100;
+                    return;
+                }
+
+                // Извлекаем числовые значения из options
+                const values = options
+                    .map(opt => Number(opt.value))
+                    .filter(val => Number.isFinite(val))
+                    .sort((a, b) => a - b);
+
+                if (values.length === 0) {
+                    console.warn('No valid numeric values in filter options');
+                    min.value = 0;
+                    max.value = 100;
+                    currentMin.value = props.rangeMin ?? 0;
+                    currentMax.value = props.rangeMax ?? 100;
+                    return;
+                }
+
+                min.value = values[0];
+                max.value = values[values.length - 1];
+
+                // Убеждаемся что min !== max
+                if (min.value === max.value) {
+                    max.value = min.value + 1;
+                }
+
+                // Устанавливаем текущие значения
+                currentMin.value = props.rangeMin ?? min.value;
+                currentMax.value = props.rangeMax ?? max.value;
+
+                // Проверяем что текущие значения в допустимых пределах
+                currentMin.value = Math.max(min.value, Math.min(currentMin.value, max.value));
+                currentMax.value = Math.max(min.value, Math.min(currentMax.value, max.value));
+
+            } catch (error) {
+                console.error('Error initializing range:', error);
+                min.value = 0;
+                max.value = 100;
+                currentMin.value = props.rangeMin ?? 0;
+                currentMax.value = props.rangeMax ?? 100;
+            }
+        };
 
         const updateLabels = (leftVal: number, rightVal: number) => {
+            if (!Number.isFinite(leftVal) || !Number.isFinite(rightVal)) {
+                return;
+            }
+
             currentMin.value = Math.min(leftVal, rightVal);
             currentMax.value = Math.max(leftVal, rightVal);
-
-            // Можно добавить форматирование (например, для валюты)
-            // currentMin.value = formatCurrency(Math.min(leftVal, rightVal));
-            // currentMax.value = formatCurrency(Math.max(leftVal, rightVal));
         };
 
         const emitChangeEvent = () => {
-            emit('selectFilter', {
-                from: currentMin.value,
-                to: currentMax.value
-            });
+            if (!Number.isFinite(currentMin.value) || !Number.isFinite(currentMax.value)) {
+                return;
+            }
+
+            // Создаем AggregationOption с диапазоном
+            const aggregationOption: AggregationOption = {
+                value: `${currentMin.value}_${currentMax.value}`,
+                label: `${currentMin.value} - ${currentMax.value}`,
+                count: null, // Или можно вычислить количество товаров в диапазоне
+            };
+
+            emit('selectFilter', aggregationOption);
         };
 
-        onMounted(() => {
-            if (!slider.value || !touchLeft.value || !touchRight.value || !lineSpan.value) return;
+        const updateLine = () => {
+            if (!touchLeft.value || !touchRight.value || !lineSpan.value) return;
 
-            const normalizeFact = 26;
+            const left = touchLeft.value.offsetLeft;
+            const right = touchRight.value.offsetLeft;
+
+            if (!Number.isFinite(left) || !Number.isFinite(right)) return;
+
+            lineSpan.value.style.marginLeft = `${left}px`;
+            lineSpan.value.style.width = `${Math.max(0, right - left)}px`;
+        };
+
+        const calculateValues = () => {
+            if (!slider.value || !touchLeft.value || !touchRight.value) {
+                return;
+            }
+
+            const range = max.value - min.value;
             const sliderWidth = slider.value.offsetWidth;
-            const maxX = sliderWidth - touchRight.value.offsetWidth;
+            const normalizeFact = 26;
+            const effectiveWidth = sliderWidth - normalizeFact;
 
-            const updateLine = () => {
-                const left = touchLeft.value!.offsetLeft;
-                const right = touchRight.value!.offsetLeft;
-                lineSpan.value!.style.marginLeft = `${left}px`;
-                lineSpan.value!.style.width = `${right - left}px`;
+            if (effectiveWidth <= 0 || range <= 0 || !Number.isFinite(range)) {
+                return;
+            }
+
+            const leftOffset = touchLeft.value.offsetLeft;
+            const rightOffset = touchRight.value.offsetLeft;
+
+            if (!Number.isFinite(leftOffset) || !Number.isFinite(rightOffset)) {
+                return;
+            }
+
+            const leftVal = Math.round((leftOffset / effectiveWidth) * range + min.value);
+            const rightVal = Math.round((rightOffset / effectiveWidth) * range + min.value);
+
+            if (!Number.isFinite(leftVal) || !Number.isFinite(rightVal)) {
+                return;
+            }
+
+            updateLabels(leftVal, rightVal);
+            emitChangeEvent();
+        };
+
+        const setSliderPosition = (element: HTMLElement, value: number) => {
+            if (!slider.value || !Number.isFinite(value)) return;
+
+            const range = max.value - min.value;
+            const sliderWidth = slider.value.offsetWidth;
+            const normalizeFact = 26;
+            const effectiveWidth = sliderWidth - normalizeFact;
+
+            if (effectiveWidth <= 0 || range <= 0) return;
+
+            const normalizedValue = Math.max(0, Math.min(1, (value - min.value) / range));
+            const position = normalizedValue * effectiveWidth;
+
+            element.style.left = `${position}px`;
+        };
+
+        const addDrag = (el: HTMLElement, isLeft: boolean) => {
+            let startX = 0;
+            let isDragging = false;
+
+            const onMove = (e: MouseEvent | TouchEvent) => {
+                if (!isDragging) return;
+
+                e.preventDefault();
+                const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
+                let x = clientX - startX;
+
+                if (!slider.value) return;
+
+                const sliderWidth = slider.value.offsetWidth;
+                const maxX = sliderWidth - el.offsetWidth;
+
+                x = Math.max(0, Math.min(x, maxX));
+
+                if (isLeft && touchRight.value) {
+                    const maxLeftX = touchRight.value.offsetLeft - 10;
+                    x = Math.min(x, maxLeftX);
+                } else if (!isLeft && touchLeft.value) {
+                    const minRightX = touchLeft.value.offsetLeft + 10;
+                    x = Math.max(x, minRightX);
+                }
+
+                el.style.left = `${x}px`;
+                updateLine();
+                calculateValues();
             };
 
-            const calculateValues = () => {
-                const range = max.value - min.value;
-                const width = sliderWidth - normalizeFact;
-                const leftVal = Math.round((touchLeft.value!.offsetLeft / width) * range + min.value);
-                const rightVal = Math.round((touchRight.value!.offsetLeft / width) * range + min.value);
-
-                updateLabels(leftVal, rightVal);
-                emitChangeEvent();
+            const onStop = () => {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onStop);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onStop);
+                document.body.style.userSelect = '';
             };
 
-            const addDrag = (el: HTMLElement, isLeft: boolean) => {
-                let startX = 0;
-                let x = 0;
+            const onStart = (e: MouseEvent | TouchEvent) => {
+                e.preventDefault();
+                isDragging = true;
 
-                const onMove = (e: MouseEvent | TouchEvent) => {
-                    const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
-                    x = clientX - startX;
-                    x = Math.max(0, Math.min(x, maxX));
+                const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
+                const rect = el.getBoundingClientRect();
+                startX = clientX - rect.left;
 
-                    if (isLeft) {
-                        if (x > touchRight.value!.offsetLeft - 10) x = touchRight.value!.offsetLeft - 10;
-                        touchLeft.value!.style.left = `${x}px`;
-                    } else {
-                        if (x < touchLeft.value!.offsetLeft + 10) x = touchLeft.value!.offsetLeft + 10;
-                        touchRight.value!.style.left = `${x}px`;
-                    }
-
-                    updateLine();
-                    calculateValues();
-                };
-
-                const onStop = () => {
-                    document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onStop);
-                    document.removeEventListener('touchmove', onMove);
-                    document.removeEventListener('touchend', onStop);
-                };
-
-                const onStart = (e: MouseEvent | TouchEvent) => {
-                    e.preventDefault();
-                    const clientX = 'touches' in e ? e.touches[0].pageX : e.pageX;
-                    x = el.offsetLeft;
-                    startX = clientX - x;
-
-                    document.addEventListener('mousemove', onMove);
-                    document.addEventListener('mouseup', onStop);
-                    document.addEventListener('touchmove', onMove);
-                    document.addEventListener('touchend', onStop);
-                };
-
-                el.addEventListener('mousedown', onStart);
-                el.addEventListener('touchstart', onStart);
+                document.addEventListener('mousemove', onMove, { passive: false });
+                document.addEventListener('mouseup', onStop);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onStop);
+                document.body.style.userSelect = 'none';
             };
 
-            touchLeft.value.style.left = `0px`;
-            touchRight.value.style.left = `${sliderWidth - touchLeft.value.offsetWidth}px`;
+            el.addEventListener('mousedown', onStart);
+            el.addEventListener('touchstart', onStart, { passive: false });
+        };
+
+        const initializeSlider = () => {
+            if (!slider.value || !touchLeft.value || !touchRight.value || !lineSpan.value) {
+                return;
+            }
+
+            if (isInitialized.value) return;
+
+            const sliderWidth = slider.value.offsetWidth;
+
+            if (sliderWidth === 0) {
+                setTimeout(initializeSlider, 100);
+                return;
+            }
+
+            // Устанавливаем начальные позиции
+            setSliderPosition(touchLeft.value, currentMin.value);
+            setSliderPosition(touchRight.value, currentMax.value);
+
             updateLine();
-            calculateValues();
 
             addDrag(touchLeft.value, true);
             addDrag(touchRight.value, false);
+
+            isInitialized.value = true;
+        };
+
+        onMounted(async () => {
+            initializeRange();
+            await nextTick();
+
+            setTimeout(() => {
+                initializeSlider();
+            }, 50);
         });
 
         return {
@@ -187,6 +326,7 @@ export default defineComponent({
     width: 20px;
     padding: 6px;
     z-index: 2;
+    cursor: pointer;
 
     span {
         display: block;
@@ -195,6 +335,15 @@ export default defineComponent({
         background: #f0f0f0;
         border: 1px solid #a4a4a4;
         border-radius: 50%;
+        transition: background-color 0.2s ease;
+    }
+
+    &:hover span {
+        background: #e0e0e0;
+    }
+
+    &:active span {
+        background: #d0d0d0;
     }
 }
 
@@ -214,6 +363,7 @@ export default defineComponent({
         height: 100%;
         width: 0%;
         background: var(--button-background, var(--c-primary));
+        transition: width 0.1s ease, margin-left 0.1s ease;
     }
 }
 
@@ -223,5 +373,11 @@ export default defineComponent({
     margin-top: 8px;
     font-size: 14px;
     color: var(--c-text);
+}
+
+.range-filter {
+    .filters__title {
+        margin-bottom: 12px;
+    }
 }
 </style>

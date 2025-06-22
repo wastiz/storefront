@@ -17,7 +17,7 @@
                     height="20px"
                     width="85%"
                 />
-                <SkeletonLoader width="50%"/>
+                <SkeletonLoader width="50%" />
                 <SkeletonLoader
                     width="62%"
                 />
@@ -36,15 +36,25 @@
                 @removeFilter="doRemoveFilter($event)"
             />
             <hr class="sf-divider">
-            <div v-for="(filter, i) in filters" :key="i" data-testid="category-filter">
+            <div
+                v-for="(filter, i) in filters"
+                :key="i"
+                data-testid="category-filter"
+            >
                 <component
                     :is="getFilterConfig(filter.attribute_code).component"
                     :filter="filter"
-                    v-bind="filter.attribute_code === 'price' ? { rangeMin: minPrice, rangeMax: maxPrice } : {}"
-                    @selectFilter="handleImmediateFilterSelection(filter, $event)"
+                    @selectFilter="selectFilter(filter, $event)"
                 />
             </div>
             <div class="filters__buttons">
+                <SfButton
+                    class="sf-button--full-width"
+                    data-testid="apply-filters"
+                    @click="doApplyFilters"
+                >
+                    {{ $t('Apply filters') }}
+                </SfButton>
                 <SfButton
                     class="sf-button--full-width filters__button-clear"
                     data-testid="clear-filters"
@@ -78,14 +88,19 @@
                         <component
                             :is="getFilterConfig(filter.attribute_code).component"
                             :filter="filter"
-                            v-bind="filter.attribute_code === 'price' ? { rangeMin: minPrice, rangeMax: maxPrice } : {}"
-                            @selectFilter="handleImmediateFilterSelection(filter, $event)"
+                            @selectFilter="selectFilter(filter, $event)"
                         />
                     </SfAccordionItem>
                 </div>
             </SfAccordion>
             <template #content-bottom>
                 <div class="filters__buttons">
+                    <SfButton
+                        class="sf-button--full-width"
+                        @click="doApplyFilters"
+                    >
+                        {{ $t('Apply filters') }}
+                    </SfButton>
                     <SfButton
                         class="sf-button--full-width filters__button-clear"
                         @click="doClearFilters"
@@ -97,10 +112,9 @@
         </SfSidebar>
     </div>
 </template>
-
 <script lang="ts">
 import {
-    defineComponent, onMounted, provide, ref, nextTick, watch, computed,
+    defineComponent, onMounted, provide, Ref, ref, nextTick, watch,
 } from '@nuxtjs/composition-api';
 import {
     SfAccordion,
@@ -111,18 +125,21 @@ import {
     SfSidebar,
 } from '@storefront-ui/vue';
 
-import {clearAllBodyScrollLocks} from 'body-scroll-lock';
+import { clearAllBodyScrollLocks } from 'body-scroll-lock';
 import SkeletonLoader from '~/components/SkeletonLoader/index.vue';
-import {useUiHelpers} from '~/composables';
-import {getFilterConfig, isFilterEnabled} from '~/modules/catalog/category/config/FiltersConfig';
+import { useUiHelpers } from '~/composables';
+import { getFilterConfig, isFilterEnabled } from '~/modules/catalog/category/config/FiltersConfig';
 import SelectedFilters from '~/modules/catalog/category/components/filters/FiltersSidebar/SelectedFilters.vue';
-import {
-    getProductFilterByCategoryCommand
-} from '~/modules/catalog/category/components/filters/command/getProductFilterByCategoryCommand';
+import { getProductFilterByCategoryCommand } from '~/modules/catalog/category/components/filters/command/getProductFilterByCategoryCommand';
 
-import type {Aggregation} from '~/modules/GraphQL/types';
-import type {SelectedFiltersInterface} from './useFilters';
-import {useFilters} from './useFilters';
+import type { Aggregation } from '~/modules/GraphQL/types';
+import type { SelectedFiltersInterface } from './useFilters';
+import { useFilters } from './useFilters';
+
+export interface UseFiltersProviderInterface {
+    selectedFilters: Ref<SelectedFiltersInterface>,
+    filters: Ref<Aggregation[]>,
+}
 
 export default defineComponent({
     name: 'CategoryFilters',
@@ -151,69 +168,36 @@ export default defineComponent({
             required: true,
         },
     },
-    setup(props, {emit}) {
-        const {
-            changeFilters,
-            clearFilters
-        } = useUiHelpers();
+    setup(props, { emit }) {
+        const { changeFilters, clearFilters } = useUiHelpers();
         const removableFilters = ref([]);
         const filters = ref<Aggregation[]>([]);
         const isLoading = ref(true);
 
-        const priceFilter = computed(() => {
-            return filters.value.find(f => f.attribute_code === 'price');
-        });
-
-        const priceRange = computed(() => {
-            if (!priceFilter.value || !priceFilter.value.options?.length) return { min: 0, max: 0 };
-
-            const values = priceFilter.value.options.flatMap(opt => {
-                const match = opt.value.match(/(\d+)_?(\d+)?/);
-                if (!match) return [];
-
-                const min = Number(match[1]);
-                const max = match[2] ? Number(match[2]) : min;
-                return [min, max];
-            });
-
-            if (!values.length) return { min: 0, max: 0 };
-
-            return {
-                min: Math.min(...values),
-                max: Math.max(...values),
-            };
-        });
-
-        const minPrice = computed(() => priceRange.value.min);
-        const maxPrice = computed(() => priceRange.value.max);
-
         const {
-            selectedFilters,
-            selectFilter,
-            removeFilter,
-            isFilterSelected,
-            getRemovableFilters,
+            selectedFilters, selectFilter, removeFilter, isFilterSelected, getRemovableFilters,
         } = useFilters();
 
         const updateRemovableFilters = () => {
             removableFilters.value = getRemovableFilters(filters.value, selectedFilters.value);
         };
 
-        const handleImmediateFilterSelection = (filter: Aggregation, value: string) => {
-            selectFilter(filter, value);
+        const doApplyFilters = () => {
             changeFilters(selectedFilters.value, false);
             updateRemovableFilters();
-            emit('reloadProducts');
-            if (props.isVisible) {
-                emit('close');
+            if (window?.scroll) {
+                window.scroll(0, 0);
             }
+            emit('reloadProducts');
+            emit('close');
         };
 
-        const doRemoveFilter = (params: { id: string; value: string }) => {
-            removeFilter(params.id, params.value);
+        const doRemoveFilter = ({ id, value }: { id: string, value: string }) => {
+            removeFilter(id, value);
             changeFilters(selectedFilters.value, false);
             updateRemovableFilters();
             emit('reloadProducts');
+            emit('close');
         };
 
         const doClearFilters = () => {
@@ -221,9 +205,12 @@ export default defineComponent({
             selectedFilters.value = {};
             updateRemovableFilters();
             emit('reloadProducts');
+            emit('close');
         };
 
         watch(() => props.isVisible, (newValue) => {
+            // disable Storefrontt UI's body scroll lock which is launched when :visible prop on SfSidebar changes
+            // two next ticks because SfSidebar uses nextTick aswell, and we want to do something after that tick.
             if (newValue) {
                 nextTick(() => nextTick(() => clearAllBodyScrollLocks()));
             }
@@ -236,14 +223,11 @@ export default defineComponent({
             isLoading.value = false;
         });
 
-        provide('UseFiltersProvider', {
-            isFilterSelected,
-            selectedFilters,
-            filters,
-        });
+        provide('UseFiltersProvider', { isFilterSelected, selectedFilters, filters });
 
         return {
-            handleImmediateFilterSelection,
+            selectFilter,
+            doApplyFilters,
             doRemoveFilter,
             doClearFilters,
             getFilterConfig,
@@ -251,8 +235,6 @@ export default defineComponent({
             filters,
             isLoading,
             removableFilters,
-            minPrice,
-            maxPrice,
         };
     },
 });
@@ -260,16 +242,4 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import './CategoryFilters.scss';
-
-.filters__buttons {
-    margin-top: var(--spacer-base);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacer-sm);
-}
-
-.filters__button-clear {
-    --button-background: var(--c-light);
-    --button-color: var(--c-text);
-}
 </style>

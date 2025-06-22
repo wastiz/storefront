@@ -1,10 +1,8 @@
-import {
-  ref, set,
-} from '@nuxtjs/composition-api';
-import { useUiHelpers } from '~/composables';
-import { getFilterConfig } from '~/modules/catalog/category/config/FiltersConfig';
-import { FilterTypeEnum } from '~/modules/catalog/category/config/config';
-import type { Aggregation, AggregationOption } from '~/modules/GraphQL/types';
+import {ref, set,} from '@nuxtjs/composition-api';
+import {useUiHelpers} from '~/composables';
+import {getFilterConfig} from '~/modules/catalog/category/config/FiltersConfig';
+import {FilterTypeEnum} from '~/modules/catalog/category/config/config';
+import type {Aggregation, AggregationOption} from '~/modules/GraphQL/types';
 
 export interface SelectedFiltersInterface {[p: string]: string[]}
 
@@ -50,7 +48,7 @@ export function useFilters() {
       set(selectedFilters.value, filter.attribute_code, []);
     }
 
-    if (config.type === FilterTypeEnum.RADIO || config.type === FilterTypeEnum.YES_NO) {
+    if (config.type === FilterTypeEnum.RADIO || config.type === FilterTypeEnum.YES_NO || config.type === FilterTypeEnum.RANGE) {
       selectedFilters.value[filter.attribute_code] = [option.value];
       return;
     }

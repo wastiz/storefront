@@ -26,16 +26,30 @@ export default defineComponent({
     } = useTraverseCategory();
     const breadcrumbs = ref<Breadcrumb[]>([]);
 
-    useFetch(async () => {
-      if (!isCategoryTreeLoaded.value) {
-        await loadCategoryTree();
-      }
+      useFetch(async () => {
+          if (!isCategoryTreeLoaded.value) {
+              await loadCategoryTree();
+          }
 
-      breadcrumbs.value = categoryAncestors.value.slice(0, -1).map((category) => ({
-        text: category.name,
-        link: localePath(getCatLink(category)),
-      }));
-    });
+          const ancestors = categoryAncestors.value;
+          const homeBreadcrumb = { text: 'Home', link: localePath('/') };
+          const lastCategory = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
+
+          breadcrumbs.value = [
+              homeBreadcrumb,
+              ...ancestors.slice(0, -1).map(category => ({
+                  text: category.name,
+                  link: localePath(getCatLink(category)),
+              })),
+          ];
+
+          if (lastCategory) {
+              breadcrumbs.value.push({
+                  text: lastCategory.name,
+                  link: localePath(getCatLink(lastCategory)),
+              });
+          }
+      });
 
     return {
       breadcrumbs,

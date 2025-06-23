@@ -1,0 +1,33 @@
+query getProductBySku($sku: String!) {
+  products(filter: { sku: { eq: $sku } }) {
+    items {
+      id
+      sku
+      name
+      description {
+        html
+      }
+      image {
+        url
+      }
+      price_range {
+        minimum_price {
+          regular_price {
+            value
+            currency
+          }
+          final_price {
+            value
+            currency
+          }
+        }
+      }
+      manufacturer
+      model
+      stock_status
+      rating_summary
+      review_count
+      # Другие необходимые поля
+    }
+  }
+}

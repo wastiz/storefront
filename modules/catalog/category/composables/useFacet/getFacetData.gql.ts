@@ -10,6 +10,12 @@ export default `
         uid
         sku
         name
+        description {
+          html
+        }
+        rating_summary
+        review_count
+        country_of_manufacture
         stock_status
         only_x_left_in_stock
         thumbnail {
